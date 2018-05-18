@@ -102,8 +102,11 @@ class IdentifyActivity : AppCompatActivity() {
         }
 
         if (bitmap != null) {
-            identifyJob = async { binding.results = classifier?.recognizeImage(bitmap)?.take(5)?.let { ClassifyResults(it) } }
-            runOnUiThread { binding.tfPreview.setImageBitmap(bitmap) }
+            identifyJob = async {
+                binding.results = classifier?.recognizeImage(bitmap)
+                        ?.take(5)
+                        ?.let { ClassifyResults(it) }
+            }
         }
     }
 

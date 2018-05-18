@@ -1,9 +1,11 @@
 package com.geckour.findout
 
+import android.content.Context
 import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.RectF
+import android.graphics.Typeface
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface
 import java.io.IOException
 import java.util.*
@@ -30,10 +32,10 @@ class TFImageClassifier(
             assetManager.open(labelFileName.split("file:///android_asset/").last())
                     .bufferedReader()
                     .useLines {
-                it.forEach {
-                    labels.add(it)
-                }
-            }
+                        it.forEach {
+                            labels.add(it)
+                        }
+                    }
         } catch (e: IOException) {
             throw RuntimeException("Cannot read label file.", e)
         }
@@ -73,5 +75,31 @@ class TFImageClassifier(
             val title: String,
             val confidence: Float,
             var location: RectF?
-    )
+    ) {
+        private val isLowValidity: Boolean =
+                confidence < 0.1
+
+        private val isHighValidity: Boolean =
+                confidence >= 0.75
+
+        fun getOptimizedLabel(): String =
+                if (isLowValidity.not()) "$title:" else ""
+
+        fun getOptimizedConfidence(): String =
+                if (isLowValidity.not()) "${"%.2f".format(confidence * 100)}%" else ""
+
+        fun getOptimizedColor(context: Context): Int =
+                context.resources.getColor(
+                        if (isHighValidity) R.color.colorTextNormal else R.color.colorTextWeak,
+                        null)
+
+        fun getOptimizedTextSize(context: Context): Float =
+                context.resources.getDimension(
+                        if (isHighValidity) R.dimen.text_size_large
+                        else R.dimen.text_size_normal
+                )
+
+        fun getOptimizedTypeface(): Typeface =
+                if (isHighValidity) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+    }
 }
