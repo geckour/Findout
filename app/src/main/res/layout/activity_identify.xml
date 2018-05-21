@@ -16,8 +16,19 @@
         android:keepScreenOn="true"
         tools:context=".ui.IdentifyActivity">
 
+        <ImageView
+            android:id="@+id/media_preview"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/frame"
+            app:layout_constraintEnd_toEndOf="@id/frame"
+            app:layout_constraintStart_toStartOf="@id/frame"
+            app:layout_constraintTop_toTopOf="@id/frame" />
+
         <com.geckour.findout.ui.view.AutoFitTextureView
-            android:id="@+id/cameraPreview"
+            android:id="@+id/camera_preview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -25,7 +36,26 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@android:color/white"
+            app:layout_constraintBottom_toTopOf="@id/frame"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@android:color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/frame" />
+
         <com.geckour.findout.ui.view.SquareView
+            android:id="@+id/frame"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_bound"
@@ -197,7 +227,7 @@
             android:textColor="@{results.value.get(4).getOptimizedColor(context)}"
             android:textSize="@{results.value.get(4).getOptimizedTextSize(context)}"
             android:typeface="@{results.value.get(4).getOptimizedTypeface()}"
-            app:layout_constraintBottom_toBottomOf="@id/cameraPreview"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             tools:text="sunflower:"
             tools:textColor="@color/colorTextWeak"
@@ -222,6 +252,41 @@
             tools:textColor="@color/colorTextWeak"
             tools:textSize="@dimen/text_size_normal"
             tools:textStyle="normal" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/switch_to_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:src="@drawable/ic_baseline_camera_24px"
+            android:tint="@android:color/white"
+            android:visibility="gone"
+            app:fabCustomSize="48dp"
+            app:layout_constraintBottom_toBottomOf="@id/pick_media"
+            app:layout_constraintEnd_toStartOf="@id/pick_media"
+            app:layout_constraintTop_toTopOf="@id/pick_media" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/pick_media"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:src="@drawable/ic_baseline_perm_media_24px"
+            android:tint="@android:color/white"
+            app:fabCustomSize="48dp"
+            app:layout_constraintBottom_toTopOf="@id/frame"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/controller"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
     </android.support.constraint.ConstraintLayout>
 </layout>

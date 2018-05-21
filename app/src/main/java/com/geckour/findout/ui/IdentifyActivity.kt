@@ -2,11 +2,12 @@ package com.geckour.findout.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.databinding.DataBindingUtil
-import android.graphics.BitmapFactory
-import android.graphics.ImageFormat
-import android.graphics.SurfaceTexture
+import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
 import android.hardware.camera2.*
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.Image
@@ -14,10 +15,13 @@ import android.media.ImageReader
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
+import android.provider.MediaStore
 import android.support.v7.app.AppCompatActivity
 import android.util.Size
+import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.view.TextureView
+import android.view.View
 import android.widget.Toast
 import com.geckour.findout.ClassifyResults
 import com.geckour.findout.R
@@ -30,21 +34,28 @@ import timber.log.Timber
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import kotlin.math.max
 import kotlin.math.min
 
 class IdentifyActivity : AppCompatActivity() {
 
     private enum class RequestCode {
-        PERMISSIONS_REQUEST
+        PERMISSIONS_REQUEST,
+        REQUEST_CODE_PICK_MEDIA
+    }
+
+    private enum class SourceMode {
+        CAMERA,
+        MEDIA
     }
 
     companion object {
         /**
-         * Max preview width that is guaranteed by Camera2 API
+         * Max cameraPreview width that is guaranteed by Camera2 API
          */
         private const val MAX_PREVIEW_WIDTH = 1920
         /**
-         * Max preview height that is guaranteed by Camera2 API
+         * Max cameraPreview height that is guaranteed by Camera2 API
          */
         private const val MAX_PREVIEW_HEIGHT = 1080
         private val PREVIEW_SIZE = Size(640, 480)
@@ -56,7 +67,7 @@ class IdentifyActivity : AppCompatActivity() {
         private const val MODEL_FILE = "file:///android_asset/graph.pb"
         private const val LABEL_FILE = "file:///android_asset/labels.txt"
 
-        private const val THREAD_NAME_CAMERA = "thread_name_camera"
+        private const val THREAD_NAME_SURFACE = "thread_name_surface"
     }
 
     private val cameraManager: CameraManager by lazy { getSystemService(CameraManager::class.java) }
@@ -69,6 +80,8 @@ class IdentifyActivity : AppCompatActivity() {
     private val cameraLock = Semaphore(1)
 
     private var classifier: TFImageClassifier? = null
+
+    private var sourceMode = SourceMode.CAMERA
 
     private var identifyJob: Job? = null
 
@@ -110,6 +123,9 @@ class IdentifyActivity : AppCompatActivity() {
         }
     }
 
+    private lateinit var gestureDetector: ScaleGestureDetector
+
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_identify)
@@ -119,20 +135,97 @@ class IdentifyActivity : AppCompatActivity() {
         } else {
             onPermissionsGranted()
         }
+
+        binding.pickMedia.setOnClickListener {
+            binding.cameraPreview.visibility = View.GONE
+            binding.mediaPreview.visibility = View.VISIBLE
+            binding.controller.visibility = View.VISIBLE
+            sourceMode = SourceMode.MEDIA
+
+            binding.switchToCamera.apply { if (isShown.not()) show() }
+            prepareEnter()
+        }
+
+        binding.switchToCamera.apply {
+            setOnClickListener {
+                binding.controller.visibility = View.GONE
+                binding.cameraPreview.visibility = View.VISIBLE
+                binding.mediaPreview.visibility = View.GONE
+                sourceMode = SourceMode.CAMERA
+
+                this.hide()
+                prepareEnter()
+            }
+        }
+
+        gestureDetector = ScaleGestureDetector(this,
+                object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                    val previousFocus = PointF(-1f, -1f)
+
+                    override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                        previousFocus.set(detector.focusX, detector.focusY)
+
+                        return super.onScaleBegin(detector)
+                    }
+
+                    override fun onScale(detector: ScaleGestureDetector): Boolean {
+                        binding.mediaPreview.apply {
+                            val scale = max(scaleX, scaleY) * detector.scaleFactor
+
+                            if (scale > 1f) {
+                                scaleX = scale
+                                scaleY = scale
+                            } else {
+                                scaleX = 1f
+                                scaleY = 1f
+                            }
+
+                            val bounds = bounds()
+
+                            translationX += (detector.focusX - previousFocus.x).let {
+                                when {
+                                    it < 0 -> if (left + width - bounds.right > it) left + width - bounds.right else it
+                                    it > 0 -> if (left - bounds.left < it) left - bounds.left else it
+                                    else -> 0f
+                                }
+                            }
+                            translationY += (detector.focusY - previousFocus.y).let {
+                                when {
+                                    it < 0 -> if (top + height - bounds.bottom > it) top + height - bounds.bottom else it
+                                    it > 0 -> if (top - bounds.top < it) top - bounds.top else it
+                                    else -> 0f
+                                }
+                            }
+
+                            previousFocus.set(detector.focusX, detector.focusY)
+                        }
+
+                        invokeMediaIdentify()
+
+                        return true
+                    }
+
+                    override fun onScaleEnd(detector: ScaleGestureDetector?) {
+                        super.onScaleEnd(detector)
+
+                        previousFocus.set(-1f, -1f)
+                    }
+                }
+        )
+
+        binding.controller.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
     }
 
     override fun onResume() {
         super.onResume()
 
-        startIdentify()
+        prepareEnter(fromResume = true)
     }
 
     override fun onPause() {
         super.onPause()
 
-        identifyJob?.cancel()
-        closeCamera()
-        stopThread()
+        prepareLeave()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -143,6 +236,111 @@ class IdentifyActivity : AppCompatActivity() {
                 if (grantResults.all { it == PackageManager.PERMISSION_GRANTED })
                     onPermissionsGranted()
                 else requestPermission()
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            RequestCode.REQUEST_CODE_PICK_MEDIA.ordinal -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    data?.extractMediaBitmap()?.apply {
+                        binding.mediaPreview.setImageBitmap(this)
+                        invokeMediaIdentify()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun prepareEnter(fromResume: Boolean = false) {
+        prepareLeave()
+
+        when (sourceMode) {
+            SourceMode.CAMERA -> prepareEnterWithCamera()
+            SourceMode.MEDIA -> {
+                if (fromResume.not()) prepareEnterWithMedia()
+            }
+        }
+    }
+
+    private fun prepareEnterWithCamera() {
+        startThread()
+
+        if (binding.cameraPreview.isAvailable) {
+            openCamera()
+        } else {
+            binding.cameraPreview.surfaceTextureListener =
+                    object : TextureView.SurfaceTextureListener {
+                        override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
+                            openCamera()
+                        }
+
+                        override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) = Unit
+
+                        override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean = true
+
+                        override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
+                    }
+        }
+    }
+
+    private fun prepareEnterWithMedia() {
+        startThread()
+
+        pickMedia()
+    }
+
+    private fun prepareLeave() {
+        identifyJob?.cancel()
+        closeCamera()
+        stopThread()
+    }
+
+    private fun pickMedia() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "image/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false)
+        }
+        startActivityForResult(intent, RequestCode.REQUEST_CODE_PICK_MEDIA.ordinal)
+    }
+
+    private fun invokeMediaIdentify() {
+        if (identifyJob?.isActive == true) return
+
+        binding.mediaPreview.also { preview ->
+            try {
+                val bitmap = (preview.drawable as BitmapDrawable?)?.bitmap?.let {
+                    val bounds = preview.bounds()
+                    val imageMinLength = min(it.width, it.height)
+                    val scale = imageMinLength / bounds.width()
+                    val cropStart = Point(
+                            ((preview.left - bounds.left) * scale).toInt(),
+                            ((preview.top - bounds.top) * scale).toInt()
+                    )
+                    val edgeLength = min((preview.measuredWidth * scale).toInt(), (preview.measuredHeight * scale).toInt())
+                    Bitmap.createBitmap(it,
+                            (it.width - imageMinLength) / 2 + cropStart.x,
+                            (it.height - imageMinLength) / 2 + cropStart.y,
+                            edgeLength,
+                            edgeLength
+                    ).let {
+                        Bitmap.createScaledBitmap(it,
+                                INPUT_SIZE.toInt(),
+                                INPUT_SIZE.toInt(),
+                                false)
+                    }
+                } ?: return
+
+                identifyJob = async {
+                    binding.results = classifier?.recognizeImage(bitmap)
+                            ?.take(5)
+                            ?.let { ClassifyResults(it) }
+                }
+            } catch (t: Throwable) {
+                Timber.e(t)
             }
         }
     }
@@ -166,7 +364,7 @@ class IdentifyActivity : AppCompatActivity() {
     private fun startThread() {
         stopThread()
 
-        thread = HandlerThread(THREAD_NAME_CAMERA).apply { start() }
+        thread = HandlerThread(THREAD_NAME_SURFACE).apply { start() }
         handler = Handler(thread?.looper)
     }
 
@@ -183,8 +381,6 @@ class IdentifyActivity : AppCompatActivity() {
     }
 
     private fun startIdentify() {
-        startThread()
-
         classifier =
                 TFImageClassifier(
                         assets,
@@ -196,28 +392,11 @@ class IdentifyActivity : AppCompatActivity() {
                         INPUT_NAME,
                         OUTPUT_NAME)
 
-        if (binding.cameraPreview.isAvailable) {
-            openCamera()
-        } else {
-            binding.cameraPreview.surfaceTextureListener =
-                    object : TextureView.SurfaceTextureListener {
-                        override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
-                            openCamera()
-                        }
-
-                        override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) = Unit
-
-                        override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean = true
-
-                        override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
-                    }
-        }
+        prepareEnter()
     }
 
     @SuppressLint("MissingPermission")
     private fun openCamera() {
-        closeCamera()
-
         val cameraId = setUpCamera()
 
         cameraId?.apply {
@@ -369,6 +548,17 @@ class IdentifyActivity : AppCompatActivity() {
         }
     }
 
+    private fun View.bounds(): RectF {
+        val halfOffset = PointF(width / 2 * (scaleX - 1), height / 2 * (scaleY - 1))
+
+        return RectF(
+                left + (translationX - halfOffset.x),
+                top + (translationY - halfOffset.y),
+                right + (translationX + halfOffset.x),
+                bottom + (translationY + halfOffset.y)
+        )
+    }
+
     private fun List<Size>.chooseOptimalSize(
             preferredSize: Size
     ): Size {
@@ -388,7 +578,7 @@ class IdentifyActivity : AppCompatActivity() {
             bigEnough.isNotEmpty() -> bigEnough.minBy { it.width * it.height } ?: this[0]
             notBigEnough.isNotEmpty() -> notBigEnough.maxBy { it.width * it.height } ?: this[0]
             else -> {
-                Timber.e("Error: Couldn't find any suitable preview size.")
+                Timber.e("Error: Couldn't find any suitable cameraPreview size.")
                 this[0]
             }
         }
@@ -402,4 +592,8 @@ class IdentifyActivity : AppCompatActivity() {
                 Surface.ROTATION_270 -> 270
                 else -> throw IllegalArgumentException("Use this method to Surface's constant. given value: $this")
             }
+
+    private fun Intent.extractMediaBitmap(): Bitmap? =
+            data?.let { MediaStore.Images.Media.getBitmap(contentResolver, it) }
+
 }
