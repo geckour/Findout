@@ -193,6 +193,7 @@ class IdentifyActivity : AppCompatActivity() {
                 if (resultCode == Activity.RESULT_OK) {
                     data?.extractMediaBitmap()?.apply {
                         binding.mediaPreview.setImageBitmap(this)
+                        invokeMediaIdentify()
                     }
                 }
             }
