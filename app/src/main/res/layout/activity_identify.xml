@@ -16,11 +16,10 @@
         android:keepScreenOn="true"
         tools:context=".ui.IdentifyActivity">
 
-        <ImageView
+        <com.github.chrisbanes.photoview.PhotoView
             android:id="@+id/media_preview"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:scaleType="centerCrop"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@id/frame"
             app:layout_constraintEnd_toEndOf="@id/frame"
@@ -227,7 +226,7 @@
             android:textColor="@{results.value.get(4).getOptimizedColor(context)}"
             android:textSize="@{results.value.get(4).getOptimizedTextSize(context)}"
             android:typeface="@{results.value.get(4).getOptimizedTypeface()}"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/frame"
             app:layout_constraintStart_toStartOf="parent"
             tools:text="sunflower:"
             tools:textColor="@color/colorTextWeak"
@@ -274,9 +273,9 @@
             android:src="@drawable/ic_baseline_perm_media_24px"
             android:tint="@android:color/white"
             app:fabCustomSize="48dp"
-            app:layout_constraintBottom_toTopOf="@id/frame"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/frame" />
 
         <View
             android:id="@+id/controller"

@@ -58,4 +58,7 @@ dependencies {
 
     // TensorFlow
     implementation 'org.tensorflow:tensorflow-android:1.8.0'
+
+    // Pinch-enabled ImageView
+    implementation 'com.github.chrisbanes:PhotoView:2.0.0'
 }

@@ -18,10 +18,10 @@ import android.os.HandlerThread
 import android.provider.MediaStore
 import android.support.v7.app.AppCompatActivity
 import android.util.Size
-import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import com.geckour.findout.ClassifyResults
 import com.geckour.findout.R
@@ -34,7 +34,6 @@ import timber.log.Timber
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import kotlin.math.max
 import kotlin.math.min
 
 class IdentifyActivity : AppCompatActivity() {
@@ -123,8 +122,6 @@ class IdentifyActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var gestureDetector: ScaleGestureDetector
-
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -157,63 +154,11 @@ class IdentifyActivity : AppCompatActivity() {
                 prepareEnter()
             }
         }
-
-        gestureDetector = ScaleGestureDetector(this,
-                object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-                    val previousFocus = PointF(-1f, -1f)
-
-                    override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-                        previousFocus.set(detector.focusX, detector.focusY)
-
-                        return super.onScaleBegin(detector)
-                    }
-
-                    override fun onScale(detector: ScaleGestureDetector): Boolean {
-                        binding.mediaPreview.apply {
-                            val scale = max(scaleX, scaleY) * detector.scaleFactor
-
-                            if (scale > 1f) {
-                                scaleX = scale
-                                scaleY = scale
-                            } else {
-                                scaleX = 1f
-                                scaleY = 1f
-                            }
-
-                            val bounds = bounds()
-
-                            translationX += (detector.focusX - previousFocus.x).let {
-                                when {
-                                    it < 0 -> if (left + width - bounds.right > it) left + width - bounds.right else it
-                                    it > 0 -> if (left - bounds.left < it) left - bounds.left else it
-                                    else -> 0f
-                                }
-                            }
-                            translationY += (detector.focusY - previousFocus.y).let {
-                                when {
-                                    it < 0 -> if (top + height - bounds.bottom > it) top + height - bounds.bottom else it
-                                    it > 0 -> if (top - bounds.top < it) top - bounds.top else it
-                                    else -> 0f
-                                }
-                            }
-
-                            previousFocus.set(detector.focusX, detector.focusY)
-                        }
-
-                        invokeMediaIdentify()
-
-                        return true
-                    }
-
-                    override fun onScaleEnd(detector: ScaleGestureDetector?) {
-                        super.onScaleEnd(detector)
-
-                        previousFocus.set(-1f, -1f)
-                    }
-                }
-        )
-
-        binding.controller.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
+        binding.mediaPreview.apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            maximumScale = 100f
+            setOnMatrixChangeListener { invokeMediaIdentify() }
+        }
     }
 
     override fun onResume() {
@@ -248,7 +193,6 @@ class IdentifyActivity : AppCompatActivity() {
                 if (resultCode == Activity.RESULT_OK) {
                     data?.extractMediaBitmap()?.apply {
                         binding.mediaPreview.setImageBitmap(this)
-                        invokeMediaIdentify()
                     }
                 }
             }
@@ -313,25 +257,22 @@ class IdentifyActivity : AppCompatActivity() {
         binding.mediaPreview.also { preview ->
             try {
                 val bitmap = (preview.drawable as BitmapDrawable?)?.bitmap?.let {
-                    val bounds = preview.bounds()
-                    val imageMinLength = min(it.width, it.height)
-                    val scale = imageMinLength / bounds.width()
-                    val cropStart = Point(
-                            ((preview.left - bounds.left) * scale).toInt(),
-                            ((preview.top - bounds.top) * scale).toInt()
-                    )
-                    val edgeLength = min((preview.measuredWidth * scale).toInt(), (preview.measuredHeight * scale).toInt())
-                    Bitmap.createBitmap(it,
-                            (it.width - imageMinLength) / 2 + cropStart.x,
-                            (it.height - imageMinLength) / 2 + cropStart.y,
-                            edgeLength,
-                            edgeLength
-                    ).let {
-                        Bitmap.createScaledBitmap(it,
-                                INPUT_SIZE.toInt(),
-                                INPUT_SIZE.toInt(),
-                                false)
+                    val scale = preview.displayRect.width() / it.width
+                    val cropRect = preview.displayRect.let {
+                        Rect(
+                                (-it.left / scale).toInt(),
+                                (-it.top / scale).toInt(),
+                                (preview.measuredWidth / scale).toInt(),
+                                (preview.measuredHeight / scale).toInt()
+                        )
                     }
+
+                    Bitmap.createBitmap(it, cropRect.left, cropRect.top, cropRect.right, cropRect.bottom).let {
+                    Bitmap.createScaledBitmap(it,
+                            INPUT_SIZE.toInt(),
+                            INPUT_SIZE.toInt(),
+                            false)
+                }
                 } ?: return
 
                 identifyJob = async {
@@ -546,17 +487,6 @@ class IdentifyActivity : AppCompatActivity() {
         } catch (e: CameraAccessException) {
             Timber.e(e)
         }
-    }
-
-    private fun View.bounds(): RectF {
-        val halfOffset = PointF(width / 2 * (scaleX - 1), height / 2 * (scaleY - 1))
-
-        return RectF(
-                left + (translationX - halfOffset.x),
-                top + (translationY - halfOffset.y),
-                right + (translationX + halfOffset.x),
-                bottom + (translationY + halfOffset.y)
-        )
     }
 
     private fun List<Size>.chooseOptimalSize(
