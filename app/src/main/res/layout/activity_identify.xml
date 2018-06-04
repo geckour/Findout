@@ -57,7 +57,6 @@
             android:id="@+id/frame"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_bound"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -67,6 +66,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="@color/colorOverlay"
+            android:elevation="10dp"
             app:layout_constraintBottom_toBottomOf="@id/result_4_label"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -77,6 +77,7 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(0).getOptimizedLabel()}'
             android:textColor="@{results.value.get(0).getOptimizedColor(context)}"
@@ -94,6 +95,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(0).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(0).getOptimizedColor(context)}"
@@ -113,6 +115,7 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(1).getOptimizedLabel()}'
             android:textColor="@{results.value.get(1).getOptimizedColor(context)}"
@@ -130,6 +133,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(1).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(1).getOptimizedColor(context)}"
@@ -149,6 +153,7 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(2).getOptimizedLabel()}'
             android:textColor="@{results.value.get(2).getOptimizedColor(context)}"
@@ -166,6 +171,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(2).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(2).getOptimizedColor(context)}"
@@ -185,6 +191,7 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(3).getOptimizedLabel()}'
             android:textColor="@{results.value.get(3).getOptimizedColor(context)}"
@@ -202,6 +209,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(3).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(3).getOptimizedColor(context)}"
@@ -221,6 +229,7 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(4).getOptimizedLabel()}'
             android:textColor="@{results.value.get(4).getOptimizedColor(context)}"
@@ -238,6 +247,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
+            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(4).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(4).getOptimizedColor(context)}"
@@ -269,13 +279,12 @@
             android:id="@+id/pick_media"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="12dp"
+            android:layout_margin="16dp"
             android:src="@drawable/ic_baseline_perm_media_24px"
             android:tint="@android:color/white"
             app:fabCustomSize="48dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/frame" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <View
             android:id="@+id/controller"
