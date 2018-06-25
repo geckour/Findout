@@ -21,46 +21,34 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@id/frame"
-            app:layout_constraintEnd_toEndOf="@id/frame"
-            app:layout_constraintStart_toStartOf="@id/frame"
-            app:layout_constraintTop_toTopOf="@id/frame" />
-
-        <com.geckour.findout.ui.view.AutoFitTextureView
-            android:id="@+id/camera_preview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="H,1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
 
-        <View
+        <FrameLayout
+            android:id="@+id/camera_preview_wrapper"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:background="@android:color/white"
-            app:layout_constraintBottom_toTopOf="@id/frame"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:background="@android:color/white"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="H,1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/frame" />
+            app:layout_constraintTop_toTopOf="parent">
 
-        <com.geckour.findout.ui.view.SquareView
-            android:id="@+id/frame"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            <com.geckour.findout.ui.view.AutoFitTextureView
+                android:id="@+id/camera_preview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintDimensionRatio="H,1:1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </FrameLayout>
 
         <View
             android:layout_width="0dp"
@@ -235,7 +223,7 @@
             android:textColor="@{results.value.get(4).getOptimizedColor(context)}"
             android:textSize="@{results.value.get(4).getOptimizedTextSize(context)}"
             android:typeface="@{results.value.get(4).getOptimizedTypeface()}"
-            app:layout_constraintBottom_toBottomOf="@id/frame"
+            app:layout_constraintBottom_toBottomOf="@id/camera_preview_wrapper"
             app:layout_constraintStart_toStartOf="parent"
             tools:text="sunflower:"
             tools:textColor="@color/colorTextWeak"
