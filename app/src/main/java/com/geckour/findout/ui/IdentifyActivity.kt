@@ -5,7 +5,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.databinding.DataBindingUtil
+import androidx.databinding.DataBindingUtil
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
 import android.hardware.camera2.*
@@ -16,7 +16,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.provider.MediaStore
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView

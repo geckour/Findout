@@ -10,7 +10,7 @@
             type="com.geckour.findout.ClassifyResults" />
     </data>
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:keepScreenOn="true"
@@ -250,7 +250,7 @@
             tools:textSize="@dimen/text_size_normal"
             tools:textStyle="normal" />
 
-        <android.support.design.widget.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/switch_to_camera"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -263,7 +263,7 @@
             app:layout_constraintEnd_toStartOf="@id/pick_media"
             app:layout_constraintTop_toTopOf="@id/pick_media" />
 
-        <android.support.design.widget.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/pick_media"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -284,5 +284,5 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
