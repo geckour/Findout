@@ -54,7 +54,6 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="@color/colorOverlay"
-            android:elevation="10dp"
             app:layout_constraintBottom_toBottomOf="@id/result_4_label"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -65,7 +64,6 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(0).getOptimizedLabel()}'
             android:textColor="@{results.value.get(0).getOptimizedColor(context)}"
@@ -83,7 +81,6 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(0).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(0).getOptimizedColor(context)}"
@@ -103,7 +100,6 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(1).getOptimizedLabel()}'
             android:textColor="@{results.value.get(1).getOptimizedColor(context)}"
@@ -121,7 +117,6 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(1).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(1).getOptimizedColor(context)}"
@@ -141,7 +136,6 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(2).getOptimizedLabel()}'
             android:textColor="@{results.value.get(2).getOptimizedColor(context)}"
@@ -159,7 +153,6 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(2).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(2).getOptimizedColor(context)}"
@@ -179,7 +172,6 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(3).getOptimizedLabel()}'
             android:textColor="@{results.value.get(3).getOptimizedColor(context)}"
@@ -197,7 +189,6 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(3).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(3).getOptimizedColor(context)}"
@@ -217,7 +208,6 @@
             android:layout_width="wrap_content"
             android:layout_height="@dimen/textView_height"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(4).getOptimizedLabel()}'
             android:textColor="@{results.value.get(4).getOptimizedColor(context)}"
@@ -235,7 +225,6 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="4dp"
-            android:elevation="10dp"
             android:gravity="center_vertical"
             android:text='@{results.value.get(4).getOptimizedConfidence()}'
             android:textColor="@{results.value.get(4).getOptimizedColor(context)}"
@@ -250,25 +239,24 @@
             tools:textSize="@dimen/text_size_normal"
             tools:textStyle="normal" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/switch_to_camera"
+        <Button
+            android:id="@+id/button_change_media"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="12dp"
-            android:src="@drawable/ic_baseline_camera_24px"
-            android:tint="@android:color/white"
+            android:backgroundTint="@android:color/white"
+            android:text="@string/button_change_source"
+            android:textColor="@color/colorPrimaryDark"
+            android:textSize="12sp"
             android:visibility="gone"
-            app:fabCustomSize="48dp"
-            app:layout_constraintBottom_toBottomOf="@id/pick_media"
-            app:layout_constraintEnd_toStartOf="@id/pick_media"
-            app:layout_constraintTop_toTopOf="@id/pick_media" />
+            app:layout_constraintBottom_toBottomOf="@id/camera_preview_wrapper"
+            app:layout_constraintEnd_toEndOf="@id/camera_preview_wrapper" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/pick_media"
+            android:id="@+id/fab_switch_source"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
-            android:src="@drawable/ic_baseline_perm_media_24px"
+            android:src="@drawable/ic_media"
             android:tint="@android:color/white"
             app:fabCustomSize="48dp"
             app:layout_constraintBottom_toBottomOf="parent"

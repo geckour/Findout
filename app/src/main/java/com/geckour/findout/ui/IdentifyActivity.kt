@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.databinding.DataBindingUtil
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
 import android.hardware.camera2.*
@@ -16,13 +15,14 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.provider.MediaStore
-import androidx.appcompat.app.AppCompatActivity
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.databinding.DataBindingUtil
 import com.geckour.findout.ClassifyResults
 import com.geckour.findout.R
 import com.geckour.findout.TFImageClassifier
@@ -133,27 +133,8 @@ class IdentifyActivity : AppCompatActivity() {
             onPermissionsGranted()
         }
 
-        binding.pickMedia.setOnClickListener {
-            binding.cameraPreview.visibility = View.GONE
-            binding.mediaPreview.visibility = View.VISIBLE
-            binding.controller.visibility = View.VISIBLE
-            sourceMode = SourceMode.MEDIA
-
-            binding.switchToCamera.apply { if (isShown.not()) show() }
-            prepareEnter()
-        }
-
-        binding.switchToCamera.apply {
-            setOnClickListener {
-                binding.controller.visibility = View.GONE
-                binding.cameraPreview.visibility = View.VISIBLE
-                binding.mediaPreview.visibility = View.GONE
-                sourceMode = SourceMode.CAMERA
-
-                this.hide()
-                prepareEnter()
-            }
-        }
+        binding.fabSwitchSource.setOnClickListener { switchSource() }
+        binding.buttonChangeMedia.setOnClickListener { enter() }
         binding.mediaPreview.apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
             maximumScale = 100f
@@ -164,13 +145,13 @@ class IdentifyActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        prepareEnter(fromResume = true)
+        enter(fromResume = true)
     }
 
     override fun onPause() {
         super.onPause()
 
-        prepareLeave()
+        leave()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -200,18 +181,27 @@ class IdentifyActivity : AppCompatActivity() {
         }
     }
 
-    private fun prepareEnter(fromResume: Boolean = false) {
-        prepareLeave()
+    private fun switchSource() {
+        sourceMode = when (sourceMode) {
+            SourceMode.CAMERA -> SourceMode.MEDIA
+            SourceMode.MEDIA -> SourceMode.CAMERA
+        }
+
+        enter()
+    }
+
+    private fun enter(fromResume: Boolean = false) {
+        leave()
 
         when (sourceMode) {
-            SourceMode.CAMERA -> prepareEnterWithCamera()
+            SourceMode.CAMERA -> enterWithCamera()
             SourceMode.MEDIA -> {
-                if (fromResume.not()) prepareEnterWithMedia()
+                if (fromResume.not()) enterWithMedia()
             }
         }
     }
 
-    private fun prepareEnterWithCamera() {
+    private fun enterWithCamera() {
         startThread()
 
         if (binding.cameraPreview.isAvailable) {
@@ -230,15 +220,27 @@ class IdentifyActivity : AppCompatActivity() {
                         override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
                     }
         }
+
+        binding.fabSwitchSource.setImageResource(R.drawable.ic_media)
+        binding.controller.visibility = View.GONE
+        binding.cameraPreview.visibility = View.VISIBLE
+        binding.mediaPreview.visibility = View.GONE
+        binding.buttonChangeMedia.visibility = View.GONE
     }
 
-    private fun prepareEnterWithMedia() {
+    private fun enterWithMedia() {
         startThread()
 
         pickMedia()
+
+        binding.fabSwitchSource.setImageResource(R.drawable.ic_camera)
+        binding.cameraPreview.visibility = View.GONE
+        binding.mediaPreview.visibility = View.VISIBLE
+        binding.controller.visibility = View.VISIBLE
+        binding.buttonChangeMedia.visibility = View.VISIBLE
     }
 
-    private fun prepareLeave() {
+    private fun leave() {
         identifyJob?.cancel()
         closeCamera()
         stopThread()
@@ -269,11 +271,11 @@ class IdentifyActivity : AppCompatActivity() {
                     }
 
                     Bitmap.createBitmap(it, cropRect.left, cropRect.top, cropRect.right, cropRect.bottom).let {
-                    Bitmap.createScaledBitmap(it,
-                            INPUT_SIZE.toInt(),
-                            INPUT_SIZE.toInt(),
-                            false)
-                }
+                        Bitmap.createScaledBitmap(it,
+                                INPUT_SIZE.toInt(),
+                                INPUT_SIZE.toInt(),
+                                false)
+                    }
                 } ?: return
 
                 identifyJob = async {
@@ -334,7 +336,7 @@ class IdentifyActivity : AppCompatActivity() {
                         INPUT_NAME,
                         OUTPUT_NAME)
 
-        prepareEnter()
+        enter()
     }
 
     @SuppressLint("MissingPermission")
