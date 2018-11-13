@@ -21,22 +21,23 @@ import android.view.TextureView
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import com.geckour.findout.ClassifyResults
 import com.geckour.findout.R
 import com.geckour.findout.TFImageClassifier
 import com.geckour.findout.databinding.ActivityIdentifyBinding
 import com.geckour.findout.util.centerFit
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
 
-class IdentifyActivity : AppCompatActivity() {
+class IdentifyActivity : ScopedActivity() {
 
     private enum class RequestCode {
         PERMISSIONS_REQUEST,
@@ -114,7 +115,7 @@ class IdentifyActivity : AppCompatActivity() {
         }
 
         if (bitmap != null) {
-            identifyJob = async {
+            identifyJob = launch(Dispatchers.IO) {
                 binding.results = classifier?.recognizeImage(bitmap)
                         ?.take(5)
                         ?.let { ClassifyResults(it) }
@@ -460,7 +461,7 @@ class IdentifyActivity : AppCompatActivity() {
                 cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
                         ?.apply {
                             addTarget(surface)
-                            addTarget(imageReader?.surface)
+                            addTarget(imageReader?.surface ?: return@apply)
 
                             val captureCallback = object : CameraCaptureSession.CaptureCallback() {}
 

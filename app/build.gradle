@@ -4,10 +4,6 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
-apply plugin: 'kotlin-kapt'
-
-kotlin.experimental.coroutines 'enable'
-
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -30,7 +26,7 @@ android {
 }
 
 dependencies {
-    def coroutines_version = '0.19.3'
+    def coroutines_version = '1.0.1'
     def stetho_version = '1.5.0'
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
