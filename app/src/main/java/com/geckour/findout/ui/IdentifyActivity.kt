@@ -68,6 +68,8 @@ class IdentifyActivity : ScopedActivity() {
         private const val LABEL_FILE = "file:///android_asset/labels.txt"
 
         private const val THREAD_NAME_SURFACE = "thread_name_surface"
+
+        private const val COLLECTING_TIME_TO_SUGGEST_MS = 2000
     }
 
     private val cameraManager: CameraManager by lazy { getSystemService(CameraManager::class.java) }
@@ -84,6 +86,8 @@ class IdentifyActivity : ScopedActivity() {
     private var sourceMode = SourceMode.CAMERA
 
     private var identifyJob: Job? = null
+
+    private val collectedRecognitions: MutableList<Pair<TFImageClassifier.Recognition, Long>> = mutableListOf()
 
     private lateinit var binding: ActivityIdentifyBinding
 
@@ -116,9 +120,9 @@ class IdentifyActivity : ScopedActivity() {
 
         if (bitmap != null) {
             identifyJob = launch(Dispatchers.IO) {
-                binding.results = classifier?.recognizeImage(bitmap)
+                classifier?.recognizeImage(bitmap)
                         ?.take(5)
-                        ?.let { ClassifyResults(it) }
+                        ?.apply { applyRecognizeResult(this) }
             }
         }
     }
@@ -182,6 +186,25 @@ class IdentifyActivity : ScopedActivity() {
         }
     }
 
+    private fun applyRecognizeResult(result: List<TFImageClassifier.Recognition>) {
+        val now = System.currentTimeMillis()
+        collectedRecognitions.removeAll {
+            it.second < now - COLLECTING_TIME_TO_SUGGEST_MS
+        }
+        result.firstOrNull()?.apply {
+            collectedRecognitions.add(this to now)
+        }
+        binding.suggest = getSuggestName()
+        binding.results = ClassifyResults(result)
+    }
+
+    private fun getSuggestName(): String? =
+            collectedRecognitions.map { it.first }
+                    .groupBy { it }
+                    .map { it.key to it.value.size }
+                    .maxBy { it.second }
+                    ?.first?.title
+
     private fun switchSource() {
         sourceMode = when (sourceMode) {
             SourceMode.CAMERA -> SourceMode.MEDIA
@@ -223,7 +246,6 @@ class IdentifyActivity : ScopedActivity() {
         }
 
         binding.fabSwitchSource.setImageResource(R.drawable.ic_media)
-        binding.controller.visibility = View.GONE
         binding.cameraPreview.visibility = View.VISIBLE
         binding.mediaPreview.visibility = View.GONE
         binding.buttonChangeMedia.visibility = View.GONE
@@ -237,12 +259,12 @@ class IdentifyActivity : ScopedActivity() {
         binding.fabSwitchSource.setImageResource(R.drawable.ic_camera)
         binding.cameraPreview.visibility = View.GONE
         binding.mediaPreview.visibility = View.VISIBLE
-        binding.controller.visibility = View.VISIBLE
         binding.buttonChangeMedia.visibility = View.VISIBLE
     }
 
     private fun leave() {
         identifyJob?.cancel()
+        collectedRecognitions.clear()
         closeCamera()
         stopThread()
     }
@@ -280,9 +302,9 @@ class IdentifyActivity : ScopedActivity() {
                 } ?: return
 
                 identifyJob = async {
-                    binding.results = classifier?.recognizeImage(bitmap)
+                    classifier?.recognizeImage(bitmap)
                             ?.take(5)
-                            ?.let { ClassifyResults(it) }
+                            ?.apply { applyRecognizeResult(this) }
                 }
             } catch (t: Throwable) {
                 Timber.e(t)

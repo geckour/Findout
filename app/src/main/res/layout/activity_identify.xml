@@ -5,9 +5,15 @@
 
     <data>
 
+        <import type="android.view.View" />
+
         <variable
             name="results"
             type="com.geckour.findout.ClassifyResults" />
+
+        <variable
+            name="suggest"
+            type="String" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -239,6 +245,23 @@
             tools:textSize="@dimen/text_size_normal"
             tools:textStyle="normal" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_flatten"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="@android:color/white"
+            android:text="@{suggest}"
+            android:textColor="@color/colorPrimaryDark"
+            android:textStyle="bold"
+            android:visibility="@{suggest == null ? View.GONE : View.VISIBLE}"
+            app:cornerRadius="20dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/camera_preview_wrapper"
+            tools:text="ヒマワリ" />
+
         <Button
             android:id="@+id/button_change_media"
             android:layout_width="wrap_content"
@@ -257,20 +280,10 @@
             android:layout_height="wrap_content"
             android:layout_margin="16dp"
             android:src="@drawable/ic_media"
-            android:tint="@android:color/white"
+            app:backgroundTint="@color/colorPrimary"
             app:fabCustomSize="48dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <View
-            android:id="@+id/controller"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
+            app:tint="@android:color/white" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
