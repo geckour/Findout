@@ -6,7 +6,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.*
-import android.graphics.drawable.BitmapDrawable
 import android.hardware.camera2.*
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.Image
@@ -29,7 +28,6 @@ import com.geckour.findout.databinding.ActivityIdentifyBinding
 import com.geckour.findout.util.centerFit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
@@ -96,10 +94,9 @@ class IdentifyActivity : ScopedActivity() {
 
         val bitmap = try {
             image = it.acquireLatestImage()
-            image?.let {
+            image?.use {
                 if (identifyJob?.isActive != true) {
                     val bytes = it.planes[0].buffer.let { ByteArray(it.capacity()).apply { it.get(this) } }
-                    it.close()
                     BitmapFactory.decodeByteArray(bytes, 0, bytes.size, null)
                             .centerFit(
                                     INPUT_SIZE.toInt(),
@@ -108,7 +105,6 @@ class IdentifyActivity : ScopedActivity() {
                                             + (sensorOrientation ?: 0)).toFloat()
                             )
                 } else {
-                    image.close()
                     null
                 }
             }
@@ -142,8 +138,7 @@ class IdentifyActivity : ScopedActivity() {
         binding.buttonChangeMedia.setOnClickListener { enter() }
         binding.mediaPreview.apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
-            maximumScale = 100f
-            setOnMatrixChangeListener { invokeMediaIdentify() }
+            setOnTouchStateChangeListener { invokeMediaIdentify() }
         }
     }
 
@@ -280,29 +275,20 @@ class IdentifyActivity : ScopedActivity() {
     private fun invokeMediaIdentify() {
         if (identifyJob?.isActive == true) return
 
-        binding.mediaPreview.also { preview ->
+        binding.mediaPreviewWrapper.also { wrapper ->
             try {
-                val bitmap = (preview.drawable as BitmapDrawable?)?.bitmap?.let {
-                    val scale = preview.displayRect.width() / it.width
-                    val cropRect = preview.displayRect.let {
-                        Rect(
-                                (-it.left / scale).toInt(),
-                                (-it.top / scale).toInt(),
-                                (preview.measuredWidth / scale).toInt(),
-                                (preview.measuredHeight / scale).toInt()
-                        )
-                    }
+                val bitmap: Bitmap = Bitmap.createScaledBitmap(
+                        Bitmap.createBitmap(wrapper.width, wrapper.height,
+                                Bitmap.Config.ARGB_8888).apply {
+                            wrapper.draw(Canvas(this))
+                        },
+                        INPUT_SIZE.toInt(),
+                        INPUT_SIZE.toInt(),
+                        false
+                )
 
-                    Bitmap.createBitmap(it, cropRect.left, cropRect.top, cropRect.right, cropRect.bottom).let {
-                        Bitmap.createScaledBitmap(it,
-                                INPUT_SIZE.toInt(),
-                                INPUT_SIZE.toInt(),
-                                false)
-                    }
-                } ?: return
-
-                identifyJob = async {
-                    classifier?.recognizeImage(bitmap)
+                identifyJob = launch(Dispatchers.IO) {
+                    binding.results = classifier?.recognizeImage(bitmap)
                             ?.take(5)
                             ?.apply { applyRecognizeResult(this) }
                 }

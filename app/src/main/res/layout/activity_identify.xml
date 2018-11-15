@@ -22,17 +22,25 @@
         android:keepScreenOn="true"
         tools:context=".ui.IdentifyActivity">
 
-        <com.github.chrisbanes.photoview.PhotoView
-            android:id="@+id/media_preview"
+        <FrameLayout
+            android:id="@+id/media_preview_wrapper"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintDimensionRatio="H,1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:visibility="visible" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.geckour.findout.ui.view.GesturableImageView
+                android:id="@+id/media_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:visibility="gone"
+                tools:src="@tools:sample/avatars"
+                tools:visibility="visible" />
+        </FrameLayout>
 
         <FrameLayout
             android:id="@+id/camera_preview_wrapper"
@@ -285,5 +293,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:tint="@android:color/white" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

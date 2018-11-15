@@ -53,6 +53,7 @@ class TFImageClassifier(
         outputs = FloatArray(numClasses)
     }
 
+    @Synchronized
     fun recognizeImage(bitmap: Bitmap): List<Recognition> {
         intValues.apply { bitmap.getPixels(this, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height) }
                 .forEachIndexed { index, value ->
