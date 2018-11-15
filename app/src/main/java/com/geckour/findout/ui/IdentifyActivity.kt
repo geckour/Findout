@@ -288,7 +288,7 @@ class IdentifyActivity : ScopedActivity() {
                 )
 
                 identifyJob = launch(Dispatchers.IO) {
-                    binding.results = classifier?.recognizeImage(bitmap)
+                    classifier?.recognizeImage(bitmap)
                             ?.take(5)
                             ?.apply { applyRecognizeResult(this) }
                 }
