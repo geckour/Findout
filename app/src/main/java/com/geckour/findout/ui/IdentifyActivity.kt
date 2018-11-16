@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.hardware.camera2.*
+import android.hardware.camera2.params.MeteringRectangle
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.media.Image
 import android.media.ImageReader
@@ -15,6 +16,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.provider.MediaStore
 import android.util.Size
+import android.view.MotionEvent
 import android.view.Surface
 import android.view.TextureView
 import android.view.View
@@ -33,7 +35,9 @@ import timber.log.Timber
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 class IdentifyActivity : ScopedActivity() {
 
@@ -89,6 +93,10 @@ class IdentifyActivity : ScopedActivity() {
 
     private lateinit var binding: ActivityIdentifyBinding
 
+    private val captureCallback = object : CameraCaptureSession.CaptureCallback() {}
+
+    private var captureRequestBuilder: CaptureRequest.Builder? = null
+
     private val imageAvailableListener: (ImageReader) -> Unit = {
         var image: Image? = null
 
@@ -140,6 +148,50 @@ class IdentifyActivity : ScopedActivity() {
             scaleType = ImageView.ScaleType.CENTER_CROP
             setOnTouchStateChangeListener { invokeMediaIdentify() }
         }
+        binding.cameraPreview.setOnTouchListener { v, event ->
+            if (event.action != MotionEvent.ACTION_UP && event.action != MotionEvent.ACTION_POINTER_UP)
+                return@setOnTouchListener true
+
+            if (isAFSupported) {
+                val sensorArraySize: Rect =
+                        cameraManager.getCameraCharacteristics(
+                                cameraDevice?.id ?: return@setOnTouchListener false)
+                                .get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
+                                ?: return@setOnTouchListener false
+
+                val rotated: Boolean = sensorOrientation != 0 && sensorOrientation != 180
+                val minSensorSideLength = min(sensorArraySize.width(), sensorArraySize.height())
+                val scale = minSensorSideLength / v.width
+
+                val adjustedTouchArea =
+                        if (rotated)
+                            Rect((sensorArraySize.width() - minSensorSideLength) / 2 + (max((event.x - sqrt(event.size) / 2) * scale, 0f)).toInt(),
+                                    (sensorArraySize.height() - minSensorSideLength) / 2 + (max(((v.height - event.y) - sqrt(event.size) / 2) * scale, 0f)).toInt(),
+                                    (sensorArraySize.width() - minSensorSideLength) / 2 + ((event.x + sqrt(event.size) / 2) * scale).toInt(),
+                                    (sensorArraySize.height() - minSensorSideLength) / 2 + (((v.height - event.y) + sqrt(event.size) / 2) * scale).toInt())
+                        else Rect((sensorArraySize.height() - minSensorSideLength) / 2 + (max(((v.height - event.y) - sqrt(event.size) / 2) * scale, 0f)).toInt(),
+                                (sensorArraySize.width() - minSensorSideLength) / 2 + (max((event.x - sqrt(event.size) / 2) * scale, 0f)).toInt(),
+                                (sensorArraySize.height() - minSensorSideLength) / 2 + (((v.height - event.y) + sqrt(event.size) / 2) * scale).toInt(),
+                                (sensorArraySize.width() - minSensorSideLength) / 2 + ((event.x + sqrt(event.size) / 2) * scale).toInt())
+
+                Timber.d("fgeck adjusted touch area: $adjustedTouchArea")
+
+                val focusArea = MeteringRectangle(adjustedTouchArea, MeteringRectangle.METERING_WEIGHT_MAX)
+                captureRequestBuilder?.apply {
+                    previewSession?.stopRepeating()
+                    set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
+                    set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+                    previewSession?.capture(this.build(), captureCallback, handler)
+
+                    set(CaptureRequest.CONTROL_AF_REGIONS, arrayOf(focusArea))
+                    set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+                    set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
+                    previewSession?.setRepeatingRequest(this.build(), captureCallback, handler)
+                }
+            }
+
+            return@setOnTouchListener true
+        }
     }
 
     override fun onResume() {
@@ -180,6 +232,14 @@ class IdentifyActivity : ScopedActivity() {
             }
         }
     }
+
+    private val isAFSupported: Boolean
+        get() =
+            cameraDevice?.let {
+                (cameraManager.getCameraCharacteristics(it.id)
+                        .get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF)
+                        ?: 0) > 0
+            } ?: false
 
     private fun applyRecognizeResult(result: List<TFImageClassifier.Recognition>) {
         val now = System.currentTimeMillis()
@@ -466,14 +526,12 @@ class IdentifyActivity : ScopedActivity() {
                 it.setDefaultBufferSize(binding.cameraPreview.ratio.width, binding.cameraPreview.ratio.height)
 
                 val surface = Surface(it)
-                cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                        ?.apply {
+                captureRequestBuilder =
+                        cameraDevice?.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)?.apply {
                             addTarget(surface)
                             addTarget(imageReader?.surface ?: return@apply)
 
-                            val captureCallback = object : CameraCaptureSession.CaptureCallback() {}
-
-                            val stateCallback = object : CameraCaptureSession.StateCallback() {
+                            val captureStateCallback = object : CameraCaptureSession.StateCallback() {
                                 override fun onConfigureFailed(session: CameraCaptureSession) {
                                     Toast.makeText(this@IdentifyActivity,
                                             "Error: Failed to create capture session's configure.",
@@ -484,16 +542,17 @@ class IdentifyActivity : ScopedActivity() {
                                     if (cameraDevice == null) return
 
                                     previewSession = session
+                                    this@apply.set(CaptureRequest.CONTROL_AE_MODE,
+                                            CaptureRequest.CONTROL_AE_MODE_ON)
                                     this@apply.set(CaptureRequest.CONTROL_AF_MODE,
                                             CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                                    this@apply.set(CaptureRequest.CONTROL_AE_MODE,
-                                            CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
 
                                     previewSession?.setRepeatingRequest(this@apply.build(), captureCallback, handler)
                                 }
                             }
 
-                            cameraDevice?.createCaptureSession(listOf(surface, imageReader?.surface), stateCallback, handler)
+                            cameraDevice?.createCaptureSession(listOf(surface, imageReader?.surface),
+                                    captureStateCallback, handler)
                         }
             }
         } catch (e: CameraAccessException) {
