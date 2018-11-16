@@ -148,7 +148,7 @@ class IdentifyActivity : ScopedActivity() {
             scaleType = ImageView.ScaleType.CENTER_CROP
             setOnTouchStateChangeListener { invokeMediaIdentify() }
         }
-        binding.cameraPreview.setOnTouchListener { _, event ->
+        binding.cameraPreview.setOnTouchListener { v, event ->
             if (event.action != MotionEvent.ACTION_UP && event.action != MotionEvent.ACTION_POINTER_UP)
                 return@setOnTouchListener true
 
@@ -161,17 +161,17 @@ class IdentifyActivity : ScopedActivity() {
 
                 val rotated: Boolean = sensorOrientation != 0 && sensorOrientation != 180
                 val minSensorSideLength = min(sensorArraySize.width(), sensorArraySize.height())
-                val scale = minSensorSideLength / binding.cameraPreview.width
+                val scale = minSensorSideLength / v.width
 
                 val adjustedTouchArea =
                         if (rotated)
                             Rect((sensorArraySize.width() - minSensorSideLength) / 2 + (max((event.x - sqrt(event.size) / 2) * scale, 0f)).toInt(),
-                                    (sensorArraySize.height() - minSensorSideLength) / 2 + (max((event.y - sqrt(event.size) / 2) * scale, 0f)).toInt(),
+                                    (sensorArraySize.height() - minSensorSideLength) / 2 + (max(((v.height - event.y) - sqrt(event.size) / 2) * scale, 0f)).toInt(),
                                     (sensorArraySize.width() - minSensorSideLength) / 2 + ((event.x + sqrt(event.size) / 2) * scale).toInt(),
-                                    (sensorArraySize.height() - minSensorSideLength) / 2 + ((event.y + sqrt(event.size) / 2) * scale).toInt())
-                        else Rect((sensorArraySize.height() - minSensorSideLength) / 2 + (max((event.y - sqrt(event.size) / 2) * scale, 0f)).toInt(),
+                                    (sensorArraySize.height() - minSensorSideLength) / 2 + (((v.height - event.y) + sqrt(event.size) / 2) * scale).toInt())
+                        else Rect((sensorArraySize.height() - minSensorSideLength) / 2 + (max(((v.height - event.y) - sqrt(event.size) / 2) * scale, 0f)).toInt(),
                                 (sensorArraySize.width() - minSensorSideLength) / 2 + (max((event.x - sqrt(event.size) / 2) * scale, 0f)).toInt(),
-                                (sensorArraySize.height() - minSensorSideLength) / 2 + ((event.y + sqrt(event.size) / 2) * scale).toInt(),
+                                (sensorArraySize.height() - minSensorSideLength) / 2 + (((v.height - event.y) + sqrt(event.size) / 2) * scale).toInt(),
                                 (sensorArraySize.width() - minSensorSideLength) / 2 + ((event.x + sqrt(event.size) / 2) * scale).toInt())
 
                 Timber.d("fgeck adjusted touch area: $adjustedTouchArea")
