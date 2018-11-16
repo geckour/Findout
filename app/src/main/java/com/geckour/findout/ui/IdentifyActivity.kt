@@ -163,16 +163,21 @@ class IdentifyActivity : ScopedActivity() {
                 val minSensorSideLength = min(sensorArraySize.width(), sensorArraySize.height())
                 val scale = minSensorSideLength / v.width
 
+                val marginLeft = (sensorArraySize.width() - minSensorSideLength) / 2
+                val marginTop = (sensorArraySize.height() - minSensorSideLength) / 2
+                val tapRect = sqrt(event.size).let { RectF(-it / 2, -it / 2, it / 2, it / 2) }
+                val tapX = event.x
+                val tapY = v.height - event.y
                 val adjustedTouchArea =
                         if (rotated)
-                            Rect((sensorArraySize.width() - minSensorSideLength) / 2 + (max((event.x - sqrt(event.size) / 2) * scale, 0f)).toInt(),
-                                    (sensorArraySize.height() - minSensorSideLength) / 2 + (max(((v.height - event.y) - sqrt(event.size) / 2) * scale, 0f)).toInt(),
-                                    (sensorArraySize.width() - minSensorSideLength) / 2 + ((event.x + sqrt(event.size) / 2) * scale).toInt(),
-                                    (sensorArraySize.height() - minSensorSideLength) / 2 + (((v.height - event.y) + sqrt(event.size) / 2) * scale).toInt())
-                        else Rect((sensorArraySize.height() - minSensorSideLength) / 2 + (max(((v.height - event.y) - sqrt(event.size) / 2) * scale, 0f)).toInt(),
-                                (sensorArraySize.width() - minSensorSideLength) / 2 + (max((event.x - sqrt(event.size) / 2) * scale, 0f)).toInt(),
-                                (sensorArraySize.height() - minSensorSideLength) / 2 + (((v.height - event.y) + sqrt(event.size) / 2) * scale).toInt(),
-                                (sensorArraySize.width() - minSensorSideLength) / 2 + ((event.x + sqrt(event.size) / 2) * scale).toInt())
+                            Rect(marginLeft + (max((tapX + tapRect.left) * scale, 0f)).toInt(),
+                                    marginTop + (max((tapY + tapRect.top) * scale, 0f)).toInt(),
+                                    marginLeft + ((tapX + tapRect.right) * scale).toInt(),
+                                    marginTop + ((tapY + tapRect.bottom) * scale).toInt())
+                        else Rect(marginTop + (max((tapY + tapRect.left) * scale, 0f)).toInt(),
+                                marginLeft + (max((tapX - tapRect.top) * scale, 0f)).toInt(),
+                                marginTop + ((tapY + tapRect.right) * scale).toInt(),
+                                marginLeft + ((tapX + tapRect.bottom) * scale).toInt())
 
                 Timber.d("fgeck adjusted touch area: $adjustedTouchArea")
 
