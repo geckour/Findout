@@ -197,6 +197,8 @@ class IdentifyActivity : ScopedActivity() {
 
             return@setOnTouchListener true
         }
+
+        binding.toggleLight.setOnClickListener { toggleLight() }
     }
 
     override fun onResume() {
@@ -244,6 +246,13 @@ class IdentifyActivity : ScopedActivity() {
                 (cameraManager.getCameraCharacteristics(it.id)
                         .get(CameraCharacteristics.CONTROL_MAX_REGIONS_AF)
                         ?: 0) > 0
+            } ?: false
+
+    private val isFlashSupported: Boolean
+        get() =
+            cameraDevice?.let {
+                cameraManager.getCameraCharacteristics(it.id)
+                        .get(CameraCharacteristics.FLASH_INFO_AVAILABLE)
             } ?: false
 
     private fun applyRecognizeResult(result: List<TFImageClassifier.Recognition>) {
@@ -378,6 +387,19 @@ class IdentifyActivity : ScopedActivity() {
     private fun needToRequirePermissions(): Boolean =
             checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
                     checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+
+    private fun toggleLight() {
+        if (isFlashSupported) {
+            binding.lightEnabled = binding.lightEnabled?.not() ?: true
+            captureRequestBuilder?.apply {
+                previewSession?.stopRepeating()
+                set(CaptureRequest.FLASH_MODE,
+                        if (binding.lightEnabled == true) CaptureRequest.FLASH_MODE_TORCH
+                        else CaptureRequest.FLASH_MODE_OFF)
+                previewSession?.setRepeatingRequest(this.build(), captureCallback, handler)
+            }
+        }
+    }
 
     private fun startThread() {
         stopThread()
