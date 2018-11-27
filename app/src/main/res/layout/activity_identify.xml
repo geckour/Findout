@@ -14,6 +14,10 @@
         <variable
             name="suggest"
             type="String" />
+
+        <variable
+            name="lightEnabled"
+            type="Boolean" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -253,6 +257,19 @@
             tools:textSize="@dimen/text_size_normal"
             tools:textStyle="normal" />
 
+        <ImageView
+            android:id="@+id/toggle_light"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_marginBottom="4dp"
+            android:padding="4dp"
+            android:tint="@android:color/white"
+            android:src="@{lightEnabled ? @drawable/ic_light_off : @drawable/ic_light_on}"
+            app:layout_constraintBottom_toBottomOf="@id/result_4_value"
+            app:layout_constraintEnd_toEndOf="@id/result_4_value"
+            tools:src="@drawable/ic_light_on"/>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_flatten"
             style="@style/Widget.MaterialComponents.Button.TextButton"
@@ -293,7 +310,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:tint="@android:color/white" />
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
