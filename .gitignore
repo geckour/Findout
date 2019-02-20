@@ -190,3 +190,4 @@ release.gradle
 release.jks
 *.pepk
 google.properties
+google-services.json
