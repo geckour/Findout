@@ -5,6 +5,7 @@
 # Built application files
 *.apk
 *.ap_
+*.aab
 
 # Files for the ART/Dalvik VM
 *.dex
@@ -185,3 +186,5 @@ fabric.properties
 
 # End of https://www.gitignore.io/api/kotlin,android,androidstudio
 /.idea/assetWizardSettings.xml
+release.gradle
+release.jks

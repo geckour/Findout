@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "744772219515",
+    "firebase_url": "https://geckour-findout.firebaseio.com",
+    "project_id": "geckour-findout",
+    "storage_bucket": "geckour-findout.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744772219515:android:438ce1b7e9632643",
+        "android_client_info": {
+          "package_name": "com.geckour.findout"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "744772219515-l65dddvp0tji1ck3mcmqtf4fnoq1i4co.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4wG1hR5unN6HK-kiYLFa0eGSbXcAhOKs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
