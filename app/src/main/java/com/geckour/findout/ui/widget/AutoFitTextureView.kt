@@ -1,4 +1,4 @@
-package com.geckour.findout.ui.view
+package com.geckour.findout.ui.widget
 
 import android.content.Context
 import android.util.AttributeSet

@@ -188,3 +188,5 @@ fabric.properties
 /.idea/assetWizardSettings.xml
 release.gradle
 release.jks
+*.pepk
+google.properties

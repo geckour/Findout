@@ -2,24 +2,18 @@ package com.geckour.findout.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.crashlytics.android.Crashlytics
+import com.geckour.findout.BuildConfig
+import io.fabric.sdk.android.Fabric
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlin.coroutines.CoroutineContext
 
-abstract class ScopedActivity : AppCompatActivity(), CoroutineScope {
-
-    protected lateinit var job: Job
-    override val coroutineContext: CoroutineContext
-        get() = job + Dispatchers.Main
+abstract class CrashlyticsEnabledActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        job = Job()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
+        if (BuildConfig.DEBUG.not()) Fabric.with(this, Crashlytics())
     }
 }

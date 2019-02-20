@@ -1,7 +1,6 @@
-package com.geckour.findout.ui.view
+package com.geckour.findout.ui.widget
 
 import android.content.Context
-import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.AttributeSet

@@ -33,6 +33,13 @@ object Deps {
         const val coreKtx = "androidx.core:core-ktx:1.1.0-alpha04"
         const val design = "com.google.android.material:material:1.1.0-alpha03"
         const val constraint = "androidx.constraintlayout:constraintlayout:2.0.0-alpha3"
+
+        object Lifecycle {
+            const val version = "2.1.0-alpha02"
+            const val extensions = "androidx.lifecycle:lifecycle-extensions:$version"
+            const val viewModelKtx = "androidx.lifecycle:lifecycle-viewmodel-ktx:$version"
+            const val compiler = "androidx.lifecycle:lifecycle-compiler:$version"
+        }
     }
 
     object Timber {
@@ -46,9 +53,9 @@ object Deps {
     }
 
     object PermissionDispatcher {
-        const val version = "3.3.1"
-        const val permissionDispatcher = "com.github.hotchemi:permissionsdispatcher:$version"
-        const val processor = "com.github.hotchemi:permissionsdispatcher-processor:$version"
+        const val version = "4.3.0"
+        const val permissionDispatcher = "org.permissionsdispatcher:permissionsdispatcher:$version"
+        const val processor = "org.permissionsdispatcher:permissionsdispatcher-processor:$version"
     }
 
     object Firebase {

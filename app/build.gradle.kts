@@ -75,6 +75,11 @@ dependencies {
     implementation(Deps.Stetho.stetho)
     implementation(Deps.Stetho.okhttp)
 
+    // ViewModel
+    implementation(Deps.AndroidX.Lifecycle.extensions)
+    implementation(Deps.AndroidX.Lifecycle.viewModelKtx)
+    kapt(Deps.AndroidX.Lifecycle.compiler)
+
     // Permission
     implementation(Deps.PermissionDispatcher.permissionDispatcher)
     kapt(Deps.PermissionDispatcher.processor)
