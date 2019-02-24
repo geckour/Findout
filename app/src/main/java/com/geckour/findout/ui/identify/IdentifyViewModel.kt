@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit
 
 class IdentifyViewModel : ViewModel() {
 
-    private enum class SourceMode {
+    enum class SourceMode {
         CAMERA,
         MEDIA
     }
@@ -112,17 +112,28 @@ class IdentifyViewModel : ViewModel() {
             .maxBy { it.second }
             ?.first?.title
 
-    internal fun switchSource(
+    internal fun toggleSource(
         activity: Activity,
         binding: ActivityIdentifyBinding,
         cameraManager: CameraManager,
         imageAvailableListener: (ImageReader) -> Unit
     ) {
-        sourceMode = when (sourceMode) {
+        val sourceMode = when (sourceMode) {
             SourceMode.CAMERA -> SourceMode.MEDIA
             SourceMode.MEDIA -> SourceMode.CAMERA
         }
+        switchSource(sourceMode, activity, binding, cameraManager, imageAvailableListener)
+    }
 
+    internal fun switchSource(
+        sourceMode: SourceMode,
+        activity: Activity,
+        binding: ActivityIdentifyBinding,
+        cameraManager: CameraManager,
+        imageAvailableListener: (ImageReader) -> Unit
+    ) {
+        this.sourceMode = sourceMode
+        if (sourceMode == SourceMode.MEDIA && mediaPickedFlag.not()) pickMedia(activity)
         startIdentify(activity, binding, cameraManager, imageAvailableListener)
     }
 
@@ -136,7 +147,7 @@ class IdentifyViewModel : ViewModel() {
 
         when (sourceMode) {
             SourceMode.CAMERA -> enterWithCamera(cameraManager, activity, binding, imageAvailableListener)
-            SourceMode.MEDIA -> enterWithMedia(activity, binding)
+            SourceMode.MEDIA -> enterWithMedia(binding)
         }
         mediaPickedFlag = false
     }
@@ -172,10 +183,8 @@ class IdentifyViewModel : ViewModel() {
         binding.buttonChangeMedia.visibility = View.GONE
     }
 
-    private fun enterWithMedia(activity: Activity, binding: ActivityIdentifyBinding) {
+    private fun enterWithMedia(binding: ActivityIdentifyBinding) {
         startThread()
-
-        if (mediaPickedFlag.not()) pickMedia(activity)
 
         binding.fabSwitchSource.setImageResource(R.drawable.ic_camera)
         binding.cameraPreview.visibility = View.GONE
