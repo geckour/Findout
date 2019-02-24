@@ -15,8 +15,8 @@ android {
         applicationId = "com.geckour.findout"
         minSdkVersion(Deps.GradlePlugin.minSdkVersion)
         targetSdkVersion(Deps.GradlePlugin.targetSdkVersion)
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
         testInstrumentationRunner = Deps.Test.instrumentTestRunner
 
         dataBinding.isEnabled = true

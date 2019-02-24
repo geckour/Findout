@@ -4,16 +4,16 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Rect
-import android.graphics.RectF
+import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
+import android.media.ExifInterface
 import android.media.ImageReader
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.MotionEvent
@@ -81,10 +81,10 @@ class IdentifyActivity : CrashlyticsEnabledActivity() {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_identify)
 
         binding.fabSwitchSource.setOnClickListener {
-            viewModel.switchSource(this, binding, cameraManager, imageAvailableListener)
+            viewModel.toggleSource(this, binding, cameraManager, imageAvailableListener)
         }
         binding.buttonChangeMedia.setOnClickListener {
-            startRecognitionWithPermissionCheck()
+            switchSourceWithPermissionCheck(IdentifyViewModel.SourceMode.MEDIA)
         }
         binding.mediaPreview.apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
@@ -176,6 +176,14 @@ class IdentifyActivity : CrashlyticsEnabledActivity() {
         viewModel.startIdentify(this, binding, cameraManager, imageAvailableListener)
     }
 
+    @NeedsPermission(
+        Manifest.permission.CAMERA,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE
+    )
+    internal fun switchSource(sourceMode: IdentifyViewModel.SourceMode) {
+        viewModel.switchSource(sourceMode, this, binding, cameraManager, imageAvailableListener)
+    }
+
     @OnNeverAskAgain(
         Manifest.permission.CAMERA,
         Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -194,12 +202,19 @@ class IdentifyActivity : CrashlyticsEnabledActivity() {
 
         when (requestCode) {
             RequestCode.REQUEST_CODE_PICK_MEDIA.ordinal -> {
+                viewModel.mediaPickedFlag = true
+
                 if (resultCode == Activity.RESULT_OK) {
-                    viewModel.mediaPickedFlag = true
                     data?.extractMediaBitmap()?.apply {
                         binding.mediaPreview.setImageBitmap(this)
                         viewModel.invokeMediaIdentify(binding)
                     }
+                } else {
+                    switchSourceWithPermissionCheck(
+                        if ((binding.mediaPreview.drawable as? BitmapDrawable)?.bitmap == null)
+                            IdentifyViewModel.SourceMode.CAMERA
+                        else IdentifyViewModel.SourceMode.MEDIA
+                    )
                 }
             }
         }
@@ -221,8 +236,36 @@ class IdentifyActivity : CrashlyticsEnabledActivity() {
             } ?: false
 
     private fun Intent.extractMediaBitmap(): Bitmap? =
-        data?.let { MediaStore.Images.Media.getBitmap(contentResolver, it) }
+        data?.let {
+            MediaStore.Images.Media.getBitmap(contentResolver, it)
+                ?.rotate(it.getRotation())
+        }
 
+    private fun Uri.getRotation(): Int =
+        contentResolver.openInputStream(this)?.use {
+            ExifInterface(it).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+        } ?: ExifInterface.ORIENTATION_NORMAL
+
+    private fun Bitmap.rotate(orientation: Int): Bitmap =
+        Bitmap.createBitmap(
+            this,
+            0, 0,
+            this.width, this.height,
+            Matrix().apply {
+                postRotate(
+                    when (orientation) {
+                        ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                        ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                        ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                        else -> 0f
+                    }
+                )
+            },
+            false
+        )
 
     private fun Int.getDegreeFromSurfaceRotate(): Int =
         when (this) {
