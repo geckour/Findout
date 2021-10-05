@@ -81,7 +81,7 @@ class IdentifyViewModel : ViewModel() {
     private var identifyJob: Job? = null
     internal val isIdentifyJobActive get() = identifyJob?.isActive == true
 
-    private val collectedRecognitions: MutableList<Pair<TFImageClassifier.Recognition, Long>> = mutableListOf()
+    private val collectedRecognitions = mutableListOf<List<TFImageClassifier.Recognition>>()
 
     internal var mediaPickedFlag = false
 
@@ -89,28 +89,24 @@ class IdentifyViewModel : ViewModel() {
         identifyJob = viewModelScope.launch(Dispatchers.IO) {
             classifier?.recognizeImage(bitmap)
                 ?.take(5)
-                ?.apply { applyRecognizeResult(this, binding) }
+                ?.let { applyRecognizeResult(it, binding) }
         }
     }
 
     private fun applyRecognizeResult(result: List<TFImageClassifier.Recognition>, binding: ActivityIdentifyBinding) {
-        val now = System.currentTimeMillis()
-        collectedRecognitions.removeAll {
-            it.second < now - COLLECTING_TIME_TO_SUGGEST_MS
-        }
-        result.firstOrNull()?.apply {
-            collectedRecognitions.add(this to now)
-        }
+        collectedRecognitions.add(result)
+        if (collectedRecognitions.size > 20) collectedRecognitions.removeAt(0)
         binding.suggest = getSuggestName()
         binding.results = ClassifyResults(result)
     }
 
     private fun getSuggestName(): String? =
-        collectedRecognitions.map { it.first }
-            .groupBy { it }
-            .map { it.key to it.value.size }
+        collectedRecognitions
+            .flatten()
+            .groupBy { it.id }
+            .map { (_, recognition) -> recognition.first().title to recognition.map { it.confidence }.sum() }
             .maxBy { it.second }
-            ?.first?.title
+            ?.first
 
     internal fun toggleSource(
         activity: Activity,
